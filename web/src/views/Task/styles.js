@@ -5,6 +5,13 @@ export const Container = styled.div`
   display: flex;
   align-items: center;
   flex-direction: column;
+
+  span {
+    color: #707070;
+    margin: 5px 0;
+    font-size: 18px;
+    text-align: center;
+  }
 `;
 
 export const Form = styled.div`
@@ -16,6 +23,7 @@ export const TypeIcons = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
 
   .inative {
     opacity: 0.5;
@@ -44,6 +52,24 @@ export const Input = styled.div`
   display: flex;
   flex-direction: column;
   margin: 20px 0;
+
+  .css-lrg2au-singleValue {
+    color: #707070 !important;
+    outline: 0;
+  }
+
+  /* .css-5zed9i-control {
+    font-size: 16px;
+    padding: 10px;
+    border: none;
+    border-bottom: 1px solid #707070;
+    opacity: 0.6;
+    outline: 0;
+    background: none;
+  }
+  .css-16j6ljo-ClockHand {
+    fill: #7159c1;
+  } */
 
   span {
     color: #707070;

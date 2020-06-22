@@ -23,7 +23,7 @@ export default function Login() {
     if (isConnected) {
       history.push('/home');
     }
-  }, []);
+  }, [history]);
 
   async function handleLogin(e) {
     e.preventDefault();

@@ -104,6 +104,7 @@ class TaskController {
       where: {
         when: { [Op.lt]: current },
         userId: { [Op.eq]: req.params.id },
+        done: { [Op.ne]: true },
       },
     })
       // .sort('when')

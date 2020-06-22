@@ -4,5 +4,5 @@ module.exports = {
   database: 'todo',
   host: '127.0.0.1',
   dialect: 'mysql',
-  timezone: '-03:00',
+  // timezone: '-03:00',
 };

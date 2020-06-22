@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, LeftSide, RightSide } from './styles';
-import { Link, useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 /* Api */
 import api from '../../services/api';
@@ -13,8 +13,6 @@ import isConnected from '../../utils/isConnected';
 
 function Header({ clickNotification }) {
   const [lateCount, setLateCount] = useState();
-
-  let history = useHistory();
 
   useEffect(() => {
     async function lateVerify() {

@@ -23,10 +23,22 @@ import {
   Options,
   Save,
 } from './styles';
+
+/* Importação de temas e css default */
 import GlobalStyles from '../../styles/global';
 import theme from '../../styles/themes/theme';
 
+/* Verifica se o usuário já esta logado */
 import isConnected from '../../utils/isConnected';
+
+/* Datepicker e Timepicker */
+import TimeKeeper from 'react-timekeeper';
+import { DatePicker } from '@atlaskit/datetime-picker';
+
+/* Swal, notificações */
+import Swal from 'sweetalert2';
+
+import * as Yup from 'yup';
 
 function Task({ match }) {
   const [type, setType] = useState();
@@ -35,68 +47,87 @@ function Task({ match }) {
   const [description, setDescription] = useState();
   const [date, setDate] = useState();
   const [hour, setHour] = useState();
+  const [showTime, setShowTime] = useState();
 
   const history = useHistory();
 
   async function removeTask() {
-    const res = window.confirm('Deseja realmente remover a tarefa?');
-
-    if (res) {
-      await api
-        .delete(`/task/${match.params.id}`)
-        .then((response) => {
+    Swal.fire({
+      title: 'Deseja ralmente deletar esta tarefa?',
+      text: 'O processo não poderá ser desfeito!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim',
+      cancelButtonText: 'No',
+    }).then((result) => {
+      if (result.value) {
+        api.delete(`/task/${match.params.id}`).then((response) => {
+          Swal.fire({
+            timer: 1000,
+            icon: 'success',
+            title: 'Tarefa excluída.',
+          });
           history.push('/');
-        })
-        .catch((error) => {
-          alert(error);
         });
-    }
+      }
+    });
   }
 
   async function handleSave() {
     // Validação dos dados
+    let ValidationSchema = Yup.object().shape({
+      title: Yup.string().required('Titulo é obrigatório!'),
+      description: Yup.string().required('Descrição é obrigatória!'),
+      type: Yup.number().required('Tipo é obrigatório!'),
+      date: Yup.string().required('Data é obrigatória!'),
+      hour: Yup.string().required('Hora é obrigatória!'),
+    });
 
-    if (!title) return alert('Você precisa informar o título da tarefa');
-    else if (!description)
-      return alert('Você precisa informar a descrição da tarefa');
-    else if (!type) return alert('Você precisa selecionar o tipo da tarefa');
-    else if (!date)
-      return alert('Você precisa escolher uma data para a tarefa');
-    else if (!hour)
-      return alert('Você precisa escolher um horário para a tarefa');
-
-    if (match.params.id) {
-      await api
-        .put(`/task/${match.params.id}/${isConnected}`, {
-          macaddress: isConnected,
-          done,
-          type,
-          title,
-          description,
-          when: `${date}T${hour}:00.000`,
-        })
-        .then(history.push('/'))
-        .catch((error) => {
-          alert(error);
+    ValidationSchema.isValid({
+      title,
+      description,
+      type,
+      date,
+      hour,
+    }).then((valid) => {
+      console.log(valid);
+      if (valid) {
+        if (match.params.id) {
+          api
+            .put(`/task/${match.params.id}/${isConnected}`, {
+              macaddress: isConnected,
+              done,
+              type,
+              title,
+              description,
+              when: `${date}T${hour}:00.000`,
+            })
+            .then(history.push('/'))
+            .catch((error) => {
+              alert(error);
+            });
+        } else {
+          api
+            .post(`/task`, {
+              macaddress: '11:11:11:11:11:11',
+              type,
+              title,
+              done,
+              description,
+              when: `${date}T${hour}:00.000`,
+              userId: parseInt(isConnected, 10),
+            })
+            .then((response) => {
+              history.push('/');
+            });
+        }
+      } else {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Preencha todos os campos!',
         });
-    } else {
-      await api
-        .post(`/task`, {
-          macaddress: '11:11:11:11:11:11',
-          type,
-          title,
-          done,
-          description,
-          when: `${date}T${hour}:00.000`,
-          userId: parseInt(isConnected, 10),
-        })
-        .then((response) => {
-          history.push('/');
-        })
-        .catch((error) => {
-          alert(error);
-        });
-    }
+      }
+    });
   }
 
   useEffect(() => {
@@ -126,7 +157,7 @@ function Task({ match }) {
         <GlobalStyles />
         <Container>
           <Header />
-
+          <span>Selecione o tipo da tarefa</span>
           <Form>
             <TypeIcons>
               {typeIcons.map(
@@ -167,24 +198,52 @@ function Task({ match }) {
               />
             </TextArea>
 
-            <Input>
+            <Input placeholder={date ? date : 'Data'}>
               <span></span>
-              <input
-                type='date'
-                placeholder='Data'
-                onChange={(e) => setDate(e.target.value)}
-                value={date || ''}
+
+              <DatePicker
+                id='datepicker'
+                onChange={(date) => setDate(date)}
+                testId={'datePicker'}
+                dateFormat='DD/MM/YYYY'
+                selectProps={{
+                  placeholder: `${date ? date : 'Data'}`,
+                }}
+                value={date}
+                hideIcon
+                locale='pt-BR'
               />
             </Input>
 
             <Input>
               <span></span>
               <input
-                type='time'
-                placeholder='Relógio'
-                onChange={(e) => setHour(e.target.value)}
-                value={hour || ''}
+                onClick={() => setShowTime(true)}
+                type='text'
+                placeholder={hour ? hour : 'Hora'}
               />
+              {showTime && (
+                <TimeKeeper
+                  time={hour}
+                  onChange={(hour) => setHour(hour.formatted24)}
+                  hour24Mode
+                  switchToMinuteOnHourSelect
+                  closeOnMinuteSelect
+                  onDoneClick={() => setShowTime(false)}
+                  doneButton={(newTime) => (
+                    <div
+                      style={{
+                        color: '#707070',
+                        textAlign: 'center',
+                        padding: '10px 0',
+                      }}
+                      onClick={() => setShowTime(false)}
+                    >
+                      Fechar
+                    </div>
+                  )}
+                />
+              )}
             </Input>
 
             <Options>

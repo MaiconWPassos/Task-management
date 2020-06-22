@@ -14,7 +14,7 @@ export default createGlobalStyle`
     }
 
     body {
-      font-family: 'Raleway', sans-serif;
+      font-family: 'Roboto', sans-serif;
       background: '#fefcfd';
     }
   
