@@ -22,6 +22,7 @@ Em breve termino o Mobile, esta sendo construído em React Native.
 
 - [x] Privatizar rotas no Frontend
 - [ ] Implementar Redux
+- [ ] Desenvolver Mobile
 
 # Screenshots
 
