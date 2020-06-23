@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { format } from 'date-fns';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Redirect } from 'react-router-dom';
 
 /* Api */
 import api from '../../services/api';
@@ -31,23 +31,30 @@ import theme from '../../styles/themes/theme';
 /* Verifica se o usuário já esta logado */
 import isConnected from '../../utils/isConnected';
 
-/* Datepicker e Timepicker */
-import TimeKeeper from 'react-timekeeper';
-import { DatePicker } from '@atlaskit/datetime-picker';
-
 /* Swal, notificações */
 import Swal from 'sweetalert2';
 
 import * as Yup from 'yup';
 
+// import { MuiPickersUtilsProvider, DatePicker } from '@material-ui/pickers';
+import DateFnsUtils from '@date-io/date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+
+/* BaseUI */
+import { DatePicker, TimePicker } from 'baseui/datepicker';
+import { FormControl } from 'baseui/form-control';
+import { SIZE } from 'baseui/input';
+
 function Task({ match }) {
+  // const dateFormated = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+
   const [type, setType] = useState();
   const [done, setDone] = useState(false);
   const [title, setTitle] = useState();
   const [description, setDescription] = useState();
-  const [date, setDate] = useState();
-  const [hour, setHour] = useState();
-  const [showTime, setShowTime] = useState();
+  const [date, setDate] = useState([new Date()]);
+  const [hour, setHour] = useState(new Date());
+  const [value, setValue] = useState([new Date()]);
 
   const history = useHistory();
 
@@ -90,7 +97,6 @@ function Task({ match }) {
       date,
       hour,
     }).then((valid) => {
-      console.log(valid);
       if (valid) {
         if (match.params.id) {
           api
@@ -100,25 +106,29 @@ function Task({ match }) {
               type,
               title,
               description,
-              when: `${date}T${hour}:00.000`,
+              when: `${formatDateToSave}T${formatTimeToSave}`,
             })
-            .then(history.push('/'))
+
+            .then(() => {
+              history.push('/home');
+            })
+
             .catch((error) => {
               alert(error);
             });
         } else {
           api
             .post(`/task`, {
-              macaddress: '11:11:11:11:11:11',
+              macaddress: isConnected,
               type,
               title,
               done,
               description,
-              when: `${date}T${hour}:00.000`,
+              when: `${formatDateToSave}T${formatTimeToSave}`,
               userId: parseInt(isConnected, 10),
             })
-            .then((response) => {
-              history.push('/');
+            .then(() => {
+              history.push('/home');
             });
         }
       } else {
@@ -130,17 +140,20 @@ function Task({ match }) {
     });
   }
 
+  const formatDateToSave = format(new Date(value), 'yyyy-MM-dd');
+  const formatTimeToSave = format(new Date(hour), 'HH:mm:ss');
+
   useEffect(() => {
-    async function LoadTaskDetail() {
-      await api
+    function LoadTaskDetail() {
+      api
         .get(`/task/${match.params.id}`)
         .then((response) => {
           setType(parseInt(response.data.type), 10);
           setDone(response.data.done);
           setTitle(response.data.title);
           setDescription(response.data.description);
-          setDate(format(new Date(response.data.when), 'yyyy-MM-dd'));
-          setHour(format(new Date(response.data.when), 'HH:mm'));
+          setValue(new Date(response.data.when));
+          setHour(new Date(response.data.when));
         })
         .catch((error) => {
           alert(error);
@@ -177,7 +190,6 @@ function Task({ match }) {
                   )
               )}
             </TypeIcons>
-
             <Input>
               <span></span>
               <input
@@ -187,7 +199,6 @@ function Task({ match }) {
                 value={title || ''}
               />
             </Input>
-
             <TextArea>
               <span></span>
               <textarea
@@ -197,54 +208,27 @@ function Task({ match }) {
                 value={description || ''}
               />
             </TextArea>
-
-            <Input placeholder={date ? date : 'Data'}>
-              <span></span>
-
+            {/* <Input placeholder={date ? date : 'Data'}> */}
+            <FormControl label='Data'>
               <DatePicker
-                id='datepicker'
-                onChange={(date) => setDate(date)}
-                testId={'datePicker'}
-                dateFormat='DD/MM/YYYY'
-                selectProps={{
-                  placeholder: `${date ? date : 'Data'}`,
-                }}
-                value={date}
-                hideIcon
-                locale='pt-BR'
+                formatString={'dd/MM/yyyy'}
+                value={value || ''}
+                size={SIZE.large}
+                onChange={({ date }) =>
+                  setValue(Array.isArray(date) ? date : [date])
+                }
               />
-            </Input>
+            </FormControl>
 
-            <Input>
-              <span></span>
-              <input
-                onClick={() => setShowTime(true)}
-                type='text'
-                placeholder={hour ? hour : 'Hora'}
+            <FormControl label='Hora'>
+              <TimePicker
+                value={hour || ''}
+                onChange={(date) => setHour(date)}
+                creatable
+                format={24}
+                size={SIZE.large}
               />
-              {showTime && (
-                <TimeKeeper
-                  time={hour}
-                  onChange={(hour) => setHour(hour.formatted24)}
-                  hour24Mode
-                  switchToMinuteOnHourSelect
-                  closeOnMinuteSelect
-                  onDoneClick={() => setShowTime(false)}
-                  doneButton={(newTime) => (
-                    <div
-                      style={{
-                        color: '#707070',
-                        textAlign: 'center',
-                        padding: '10px 0',
-                      }}
-                      onClick={() => setShowTime(false)}
-                    >
-                      Fechar
-                    </div>
-                  )}
-                />
-              )}
-            </Input>
+            </FormControl>
 
             <Options>
               <div>
@@ -262,7 +246,6 @@ function Task({ match }) {
                 </button>
               )}
             </Options>
-
             <Save>
               <button onClick={handleSave} type='button'>
                 SALVAR
@@ -273,6 +256,7 @@ function Task({ match }) {
           <Footer />
         </Container>
       </ThemeProvider>
+      1
     </>
   );
 }

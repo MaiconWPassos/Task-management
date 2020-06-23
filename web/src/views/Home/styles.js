@@ -14,6 +14,7 @@ export const FilterArea = styled.div`
     border: none;
     outline: 0;
     background: none;
+    padding: 10px;
   }
 `;
 
